@@ -1,6 +1,10 @@
 import os, os.path
-import urllib.url
-import urllib.urlparse
+import urllib.request
+import urllib.parse
+import time
+import io
+import gzip
+import fcntl
 
 import bbsmenu
 
@@ -8,45 +12,65 @@ class Py2chdlerError(Exception):
     pass
 
 class Py2chdler:
-    def __init__(self, base_dir, menu_url):
-        self.base_dir = base_dir
-        self.menu_url = menu_url
+    setting = {}
+    def __init__(self, base_dir, bbsmenu_url):
+        self.settings = {'base_dir': base_dir}
+        self.bbsmenu = bbsmenu.Bbsmenu(self.settings, bbsmenu_url)
         # check existance and access rights of base_dir
         if os.path.isdir(base_dir) == False or os.access(base_dir, os.W_OK) == False:
             raise Py2chdlerError(base_dir + " not exists or not writable")
 
-    def download(self, url, mtime = None, compress = True, unfreeze = True):
+    def download(self, url, mtime = None, size= None, compress = True):
         # create request object
         request = urllib.request.Request(url)
         # add headers
-        request.add_header('Accept-Encoding', 'gzip')
+        if mtime:
+            request.add_header('If-Modified-Since', mtime)
+        if size:
+            request.add_header('Range', "bytes=" + str(size) + "-")
+        elif compress:
+            request.add_header('Accept-Encoding', 'deflate, gzip')
         request.add_header('User-Agent', 'Monazilla/1.00')
-        # open url
         opener = urllib.request.build_opener()
-        remote_file_stream = opener.open(request)
-        # read data
-        data = remote_file_stream.read()
-        remote_file.close()
-        # not sure but making "file like object" on memory
-        bin = io.BytesIO(data)
-        # decompress data
-        decompressed = gzip.GzipFile(fileobj=bin, mode="rb")
-        # return data
-        return decompressed.read()
-
-    def write_file(self, path, data, add=False):
-        if add:
-           fs = io.open(path, "ba")
+        # Catch HTTPError as set code
+        try:
+            remote_file = opener.open(request)
+            code = remote_file.code
+        except urllib.error.HTTPError as e:
+            code = e.code
+        # if access success, read data
+        if code == 200 or code == 206:
+            etag = remote_file.headers['etag']
+            last_modified = remote_file.headers['last-modified']
+            content_length = remote_file.headers['content-length']
+            data = remote_file.read()
+            remote_file.close()
+            # if compressed, decompress data
+            if compress == True:
+                bin = io.BytesIO(data)
+                decompressed = gzip.GzipFile(fileobj=bin, mode="rb")
+                text = decompressed.read()
+            else:
+                text = data
+        # Set default value as None if download fails
         else:
-           fs = io.open(path, "bw")
+            code = code; etag = None; last_modified = None; content_length = None; text= None
+        # make dl_data dic
+        dl_data = {"code": code, "etag": etag, "last-modified": last_modified, "content-length": content_length, "text": text}
+        return dl_data
+
+    def write_file(self, filepath, data, add=False):
+        if add:
+           fs = io.open(filepath, "ba")
+        else:
+           fs = io.open(filepath, "bw")
         fcntl.flock(fs.fileno(), fcntl.LOCK_EX)
         fs.write(data)
         fcntl.flock(fs.fileno(), fcntl.LOCK_UN)
         fs.close
-        return path
 
-    def read_file(self, path):
-        fs = io.open(path, mode='rb')
+    def read_file(self, filepath):
+        fs = io.open(filepath, mode='rb')
         fcntl.flock(fs.fileno(), fcntl.LOCK_SH)
         data = fs.read()
         fcntl.flock(fs.fileno(), fcntl.LOCK_UN)
@@ -55,7 +79,50 @@ class Py2chdler:
         lines = data.splitlines()
         return lines
 
+    def rename_file(self, from_filepath):
+        # set to_filepath as from_filepath.old
+        to_filepath = from_filepath + ".old"
+        if os.path.exists(from_filepath):
+            os.rename(from_filepath, to_filepath)
+
+    def get_mtime(self, filepath):
+        stat = os.stat(filepath)
+        return stat.st_mtime
+
+    def set_mtime(self, filepath, mtime):
+        atime = time.time()
+        times = (atime, mtime)
+        stat = os.utime(filepath, times)
+
+    #
+    # methods to construct 2ch objects
+    #
+    def new_bbsmenu(self):
+        return self.bbsmenu;
+    def new_boards(self, *board_names):
+        return self.bbsmenu.new_boards(board_names)
+    def new_board(self, board_name):
+        return self.bbsmenu.new_board(board_nam)
+#    # args are tuple of "board_name" and "thread_id"
+#    def new_threads(self, *args):
+#        pass
+#    def new_thread(self, board_name, thread_id):
+#        pass
+#    def new_new_thread(self):
+#        pass
+#    def new_reses(self, *args):
+#        pass
+#    # args are tuple of "board_name", "thread_id", and "res_id"
+#    def new_res(self, board_name, thread_id, res_id):
+#        pass
+#    def new_new_reses(self):
+#        pass
+
 
 if __name__ == '__main__':
     py2chdler = Py2chdler('/home/shimpeko/py2chdler/data', 'http://menu.2ch.net/bbsmenu.html')
-    exit()
+    bbsmenu = py2chdler.new_bbsmenu()
+    boards = bbsmenu.new_boards('megami')
+    for board in boards:
+        print(board.board_name + board.board_name_alphabet + board.board_url)
+    bbsmenu.reload()
