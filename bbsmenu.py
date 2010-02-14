@@ -1,9 +1,6 @@
 import os
 import re
 
-from py2chdler import Py2chdler
-from board import Board
-
 class Bbsmenu(Py2chdler):
     def __init__(self, settings, bbsmenu_url):
         self.settings = settings
@@ -12,25 +9,22 @@ class Bbsmenu(Py2chdler):
         self.bbsmenu = None
         self.boards = None
 
-    def read_bbsmenu(self):
+    def read(self):
         if os.path.exists(self.bbsmenu_path):
             lines = self.read_file(self.bbsmenu_path)
         else:
-            self.download_bbsmenu()
+            self.download()
             lines = self.read_file(self.bbsmenu_path)
         return lines
 
-    def reload(self):
+    def download(self):
         self.rename_file(self.bbsmenu_path)
-        self.download_bbsmenu()
-
-    def download_bbsmenu(self):
-        dl_data = self.download(self.bbsmenu_url)
+        dl_data = self.download_file(self.bbsmenu_url)
         self.write_file(self.bbsmenu_path, dl_data['text'])
 
     def get_boards(self, *board_names):
         boards = list()
-        bbsmenu = self.read_bbsmenu()
+        bbsmenu = self.read()
         url_regex = '<A HREF=(http://[-_a-zA-Z0-9./]+)(2ch.net|bbspink.com|machi.to)/([-_a-zA-Z0-9.]+)/>(.*)</A>'
         p_url = re.compile(url_regex)
         if len(board_names) == 0:
@@ -53,6 +47,8 @@ class Bbsmenu(Py2chdler):
 
 
 if __name__ == '__main__':
+    from py2chdler import Py2chdler #FIXME
+    from board import Board #FIXME
     py2chdler = Py2chdler('/home/shimpeko/py2chdler/data')
     bbsmenu = Bbsmenu(py2chdler.settings, 'http://menu.2ch.net/bbsmenu.html')
     boards = bbsmenu.get_boards('megami')

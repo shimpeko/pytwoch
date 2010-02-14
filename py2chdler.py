@@ -20,7 +20,7 @@ class Py2chdler:
         if os.path.isdir(base_dir) == False or os.access(base_dir, os.W_OK) == False:
             raise Py2chdlerError(base_dir + " not exists or not writable")
 
-    def download(self, url, mtime = None, size= None, compress = True):
+    def download_file(self, url, mtime = None, size= None, compress = True):
         # create request object
         request = urllib.request.Request(url)
         # add headers
@@ -125,4 +125,4 @@ if __name__ == '__main__':
     boards = bbsmenu.get_boards('megami')
     for board in boards:
         print(board.board_name + board.board_name_alphabet + board.board_url)
-    bbsmenu.reload()
+    bbsmenu.download()
