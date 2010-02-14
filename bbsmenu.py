@@ -12,12 +12,6 @@ class Bbsmenu(Py2chdler):
         self.bbsmenu = None
         self.boards = None
 
-    def get_boards(self):
-        pass
-
-    def get_board(self, board_name):
-        pass
-
     def read_bbsmenu(self):
         if os.path.exists(self.bbsmenu_path):
             lines = self.read_file(self.bbsmenu_path)
@@ -34,7 +28,7 @@ class Bbsmenu(Py2chdler):
         dl_data = self.download(self.bbsmenu_url)
         self.write_file(self.bbsmenu_path, dl_data['text'])
 
-    def new_boards(self, *board_names):
+    def get_boards(self, *board_names):
         boards = list()
         bbsmenu = self.read_bbsmenu()
         url_regex = '<A HREF=(http://[-_a-zA-Z0-9./]+)(2ch.net|bbspink.com|machi.to)/([-_a-zA-Z0-9.]+)/>(.*)</A>'
@@ -43,17 +37,17 @@ class Bbsmenu(Py2chdler):
             for line in bbsmenu:
                 r_url = p_url.search(line)
                 if r_url:
-                    boards.append(self.new_board(r_url.group(4), r_url.group(3), r_url.group(1) + r_url.group(2) + "/" + r_url.group(3) + "/"))
+                    boards.append(self.get_board(r_url.group(4), r_url.group(3), r_url.group(1) + r_url.group(2) + "/" + r_url.group(3) + "/"))
         else:
             for board_name in board_names:
                 for line in bbsmenu:
                     r_url = p_url.search(line)
                     if r_url:
                         if board_name == r_url.group(3):
-                            boards.append(self.new_board(r_url.group(4), r_url.group(3), r_url.group(1) + r_url.group(2) + "/" + r_url.group(3) + "/"))
+                            boards.append(self.get_board(r_url.group(4), r_url.group(3), r_url.group(1) + r_url.group(2) + "/" + r_url.group(3) + "/"))
         return boards
 
-    def new_board(self, board_name, board_name_alphabet, board_url):
+    def get_board(self, board_name, board_name_alphabet, board_url):
         board = Board(self.settings, board_name, board_name_alphabet, board_url)
         return board
 
@@ -61,6 +55,6 @@ class Bbsmenu(Py2chdler):
 if __name__ == '__main__':
     py2chdler = Py2chdler('/home/shimpeko/py2chdler/data')
     bbsmenu = Bbsmenu(py2chdler.settings, 'http://menu.2ch.net/bbsmenu.html')
-    boards = bbsmenu.new_boards('megami')
+    boards = bbsmenu.get_boards('megami')
     for board in boards:
         print(board.board_name + board.board_name_alphabet + board.board_url)

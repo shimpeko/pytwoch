@@ -10,6 +10,12 @@ class Board(Py2chdler):
         self.board_url = board_url
         self.threads = None
 
+    def get_threads(self, *thread_ids):
+        pass
+    
+    def get_threads(self, thread_id):
+        pass
+
 
 if __name__ == '__main__':
     py2chdler = Py2chdler('/home/shimpeko/py2chdler/data', 'http://menu.2ch.net/bbsmenu.html')

@@ -97,32 +97,32 @@ class Py2chdler:
     #
     # methods to construct 2ch objects
     #
-    def new_bbsmenu(self):
+    def get_bbsmenu(self):
         return self.bbsmenu;
-    def new_boards(self, *board_names):
-        return self.bbsmenu.new_boards(board_names)
-    def new_board(self, board_name):
-        return self.bbsmenu.new_board(board_nam)
+    def get_boards(self, *board_names):
+        return self.bbsmenu.get_boards(board_names)
+    def get_board(self, board_name):
+        return self.bbsmenu.get_board(board_name)
 #    # args are tuple of "board_name" and "thread_id"
-#    def new_threads(self, *args):
+#    def get_threads(self, *args):
 #        pass
-#    def new_thread(self, board_name, thread_id):
+#    def get_thread(self, board_name, thread_id):
 #        pass
-#    def new_new_thread(self):
+#    def get_new_thread(self):
 #        pass
-#    def new_reses(self, *args):
+#    def get_reses(self, *args):
 #        pass
 #    # args are tuple of "board_name", "thread_id", and "res_id"
-#    def new_res(self, board_name, thread_id, res_id):
+#    def get_res(self, board_name, thread_id, res_id):
 #        pass
-#    def new_new_reses(self):
+#    def get_new_reses(self):
 #        pass
 
 
 if __name__ == '__main__':
     py2chdler = Py2chdler('/home/shimpeko/py2chdler/data', 'http://menu.2ch.net/bbsmenu.html')
-    bbsmenu = py2chdler.new_bbsmenu()
-    boards = bbsmenu.new_boards('megami')
+    bbsmenu = py2chdler.get_bbsmenu()
+    boards = bbsmenu.get_boards('megami')
     for board in boards:
         print(board.board_name + board.board_name_alphabet + board.board_url)
     bbsmenu.reload()
