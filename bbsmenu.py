@@ -1,13 +1,14 @@
 import os
 import re
 
-class Bbsmenu(Py2chdler):
+from py2chdlerbase import Py2chdlerBase, Py2chdlerError
+from board import Board #FIXME
+
+class Bbsmenu(Py2chdlerBase):
     def __init__(self, settings, bbsmenu_url):
         self.settings = settings
         self.bbsmenu_path = self.settings['base_dir'] + "/bbsmenu"
         self.bbsmenu_url = bbsmenu_url
-        self.bbsmenu = None
-        self.boards = None
 
     def read(self):
         if os.path.exists(self.bbsmenu_path):
@@ -22,35 +23,31 @@ class Bbsmenu(Py2chdler):
         dl_data = self.download_file(self.bbsmenu_url)
         self.write_file(self.bbsmenu_path, dl_data['text'])
 
-    def get_boards(self, *board_names):
+    def get_boards(self, *board_names_alphabet):
         boards = list()
         bbsmenu = self.read()
+        # to use "remove" latter, convert tuple to list
+        board_names_alphabet = list(board_names_alphabet)
         url_regex = '<A HREF=(http://[-_a-zA-Z0-9./]+)(2ch.net|bbspink.com|machi.to)/([-_a-zA-Z0-9.]+)/>(.*)</A>'
         p_url = re.compile(url_regex)
-        if len(board_names) == 0:
-            for line in bbsmenu:
-                r_url = p_url.search(line)
-                if r_url:
-                    boards.append(self.get_board(r_url.group(4), r_url.group(3), r_url.group(1) + r_url.group(2) + "/" + r_url.group(3) + "/"))
-        else:
-            for board_name in board_names:
-                for line in bbsmenu:
-                    r_url = p_url.search(line)
-                    if r_url:
-                        if board_name == r_url.group(3):
-                            boards.append(self.get_board(r_url.group(4), r_url.group(3), r_url.group(1) + r_url.group(2) + "/" + r_url.group(3) + "/"))
+        for line in bbsmenu:
+            r_url = p_url.search(line)
+            if r_url:
+                if len(board_names_alphabet) == 0 or r_url.group(3) in board_names_alphabet:
+                    board = Board(self, r_url.group(4), r_url.group(3), r_url.group(1) + r_url.group(2) + "/" + r_url.group(3) + "/")
+                    boards.append(board)
+                    # remove append board name from board name list
+                    if r_url.group(3) in board_names_alphabet:
+                        board_names_alphabet.remove(r_url.group(3))
+        # raise err if requested board not exists
+        if not len(board_names_alphabet) == 0:
+            err_boards = ', '.join(board_names_alphabet)
+            raise Py2chdlerError("Board(s) name: " + err_boards + " are/is not exist(s).\nOr you may request same board more than once.")
         return boards
 
-    def get_board(self, board_name, board_name_alphabet, board_url):
-        board = Board(self.settings, board_name, board_name_alphabet, board_url)
-        return board
-
+    def get_board(self, board_name_alphabet):
+        boards = self.get_boards(board_name_alphabet)
+        return boards[0]
 
 if __name__ == '__main__':
-    from py2chdler import Py2chdler #FIXME
-    from board import Board #FIXME
-    py2chdler = Py2chdler('/home/shimpeko/py2chdler/data')
-    bbsmenu = Bbsmenu(py2chdler.settings, 'http://menu.2ch.net/bbsmenu.html')
-    boards = bbsmenu.get_boards('megami')
-    for board in boards:
-        print(board.board_name + board.board_name_alphabet + board.board_url)
+    pass

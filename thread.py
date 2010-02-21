@@ -1,20 +1,21 @@
-from py2chdler import Py2chdler
+from py2chdlerbase import Py2chdlerBase, Py2chdlerError
 
-class Thread(Py2chdler):
-    def __init__(self, settings, thread_id, title):
-        self.setting = settings
-        self.board_name = board_name
-        self.board_name_alphabet = board_name_alphabet
-        self.board_url = board_url
-        self.threads = None
+class Thread(Py2chdlerBase):
+    def __init__(self, board, thread_id, title, board_url):
+        self.board = board
+        self.thread_id = thread_id
+        self.title = title
+        self.thread_url = board_url + "/dat/" + thread_id + ".dat"
+        self.res_count = None
+        self.new_res_count = None
+        self.reses = None
 
-    def get_threads(self, *thread_ids):
+    def get_reses(self, *res_ids):
         pass
     
-    def get_threads(self, thread_id):
+    def get_res(self, res_id):
         pass
 
 
 if __name__ == '__main__':
-    py2chdler = Py2chdler('/home/shimpeko/py2chdler/data', 'http://menu.2ch.net/bbsmenu.html')
-    board = Board(py2chdler.settings, None, None, None)
+    pass
