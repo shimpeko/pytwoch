@@ -26,23 +26,24 @@ class Bbsmenu(Py2chdlerBase):
     def get_boards(self, *board_names_alphabet):
         boards = list()
         bbsmenu = self.read()
-        # to use "remove" latter, convert tuple to list
+        # convert tumple to list to use remove method
         board_names_alphabet = list(board_names_alphabet)
+        # get requested board number
+        req = len(board_names_alphabet)
         url_regex = '<A HREF=(http://[-_a-zA-Z0-9./]+)(2ch.net|bbspink.com|machi.to)/([-_a-zA-Z0-9.]+)/>(.*)</A>'
         p_url = re.compile(url_regex)
         for line in bbsmenu:
             r_url = p_url.search(line)
             if r_url:
-                if len(board_names_alphabet) == 0 or r_url.group(3) in board_names_alphabet:
+                if req == 0 or r_url.group(3) in board_names_alphabet:
                     board = Board(self, r_url.group(4), r_url.group(3), r_url.group(1) + r_url.group(2) + "/" + r_url.group(3) + "/")
                     boards.append(board)
-                    # remove append board name from board name list
                     if r_url.group(3) in board_names_alphabet:
                         board_names_alphabet.remove(r_url.group(3))
         # raise err if requested board not exists
         if not len(board_names_alphabet) == 0:
             err_boards = ', '.join(board_names_alphabet)
-            raise Py2chdlerError("Board(s) name: " + err_boards + " are/is not exist(s).\nOr you may request same board more than once.")
+            raise Py2chdlerError("Board(s) name: " + err_boards + " are/is not exist(s). Or you may request same board more than once.")
         return boards
 
     def get_board(self, board_name_alphabet):
@@ -50,4 +51,9 @@ class Bbsmenu(Py2chdlerBase):
         return boards[0]
 
 if __name__ == '__main__':
-    pass
+    settings = {'base_dir': os.path.abspath('data')}
+    bbsmenu = Bbsmenu(settings, 'http://menu.2ch.net/bbsmenu.html')
+    bbsmenu.download()
+    boards = bbsmenu.get_boards('news4vip')
+    for board in boards:
+        print(board.board_name + board.board_name_alphabet + board.board_url)
