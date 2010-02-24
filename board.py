@@ -7,16 +7,16 @@ from thread import Thread
 class Board(Py2chdlerBase):
     def __init__(self, bbsmenu, board_name, board_name_alphabet, board_url):
         self.bbsmenu = bbsmenu
-        self.board_name = board_name
-        self.board_name_alphabet = board_name_alphabet
-        self.board_url = board_url
-        self.subject_url = self.board_url + "subject.txt"
-        self.board_dir = self.bbsmenu.settings['base_dir'] + "/" + self.board_name_alphabet
-        self.subject_path = self.board_dir + "/subject.txt"
-        if not os.path.exists(self.board_dir):
-            os.mkdir(self.board_dir)
-        elif not os.path.isdir(self.board_dir):
-            raise Py2chdlerError(self.board_dir + " is not a directory.")
+        self.name = board_name
+        self.name_alphabet = board_name_alphabet
+        self.url = board_url
+        self.subject_url = self.url + "subject.txt"
+        self.dir_path = self.bbsmenu.settings['base_dir'] + "/" + self.name_alphabet
+        self.subject_path = self.dir_path + "/subject.txt"
+        if not os.path.exists(self.dir_path):
+            os.mkdir(self.dir_path)
+        elif not os.path.isdir(self.dir_path):
+            raise Py2chdlerError(self.dir_path + " is not a directory.")
 
     def read(self):
         if os.path.exists(self.subject_path):

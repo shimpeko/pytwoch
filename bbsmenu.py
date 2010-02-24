@@ -8,7 +8,7 @@ class Bbsmenu(Py2chdlerBase):
     def __init__(self, settings, bbsmenu_url):
         self.settings = settings
         self.bbsmenu_path = self.settings['base_dir'] + "/bbsmenu"
-        self.bbsmenu_url = bbsmenu_url
+        self.url = bbsmenu_url
 
     def read(self):
         if os.path.exists(self.bbsmenu_path):
@@ -20,7 +20,7 @@ class Bbsmenu(Py2chdlerBase):
 
     def download(self):
         self.rename_file(self.bbsmenu_path)
-        dl_data = self.download_file(self.bbsmenu_url)
+        dl_data = self.download_file(self.url)
         self.write_file(self.bbsmenu_path, dl_data['text'])
 
     def get_boards(self, *board_names_alphabet):
@@ -56,4 +56,4 @@ if __name__ == '__main__':
     bbsmenu.download()
     boards = bbsmenu.get_boards('news4vip')
     for board in boards:
-        print(board.board_name + board.board_name_alphabet + board.board_url)
+        print(board.name + board.name_alphabet + board.url)
