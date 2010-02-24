@@ -19,9 +19,11 @@ class Bbsmenu(Py2chdlerBase):
         return lines
 
     def download(self):
+        mtime = self.get_mtime(self.bbsmenu_path)
         self.rename_file(self.bbsmenu_path)
-        dl_data = self.download_file(self.url)
+        dl_data = self.download_file(self.url, mtime)
         self.write_file(self.bbsmenu_path, dl_data['text'])
+        self.set_mtime(self.bbsmenu_path, dl_data['last-modified'])
 
     def get_boards(self, *board_names_alphabet):
         boards = list()

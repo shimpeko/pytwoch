@@ -10,6 +10,7 @@ class Py2chdlerError(Exception):
     pass
 
 class Py2chdlerBase:
+
     def download_file(self, url, mtime = None, size= None, compress = True):
         # create request object
         request = urllib.request.Request(url)
@@ -70,19 +71,23 @@ class Py2chdlerBase:
         return lines
 
     def rename_file(self, from_filepath):
-        # set to_filepath as from_filepath.old
         to_filepath = from_filepath + ".old"
-        if os.path.exists(from_filepath):
-            os.rename(from_filepath, to_filepath)
+        os.rename(from_filepath, to_filepath)
+
 
     def get_mtime(self, filepath):
-        stat = os.stat(filepath)
-        return stat.st_mtime
+        mtime = os.stat(filepath).st_mtime
+        return mtime
+
 
     def set_mtime(self, filepath, mtime):
         atime = time.time()
         times = (atime, mtime)
         stat = os.utime(filepath, times)
+    
+    def convert_time_format(self, time):
+        pass
+
 
 if __name__ == '__main__':
     pass

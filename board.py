@@ -27,9 +27,11 @@ class Board(Py2chdlerBase):
         return lines
 
     def download(self):
+        mtime = get_mtime(self.subject_path)
         self.rename_file(self.subject_path)
-        dl_data = self.download_file(self.subject_url)
+        dl_data = self.download_file(self.subject_url, mtime)
         self.write_file(self.subject_path, dl_data['text'])
+        self.set_mtime(self.subject_path, dl_data['last-modified'])
 
     def get_threads(self, *thread_ids):
         threads = list()
