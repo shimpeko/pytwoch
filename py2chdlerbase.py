@@ -1,4 +1,5 @@
 import os, os.path
+import shutil
 import urllib.request
 import urllib.parse
 import time
@@ -9,9 +10,9 @@ import fcntl
 class Py2chdlerError(Exception):
     pass
 
-class Py2chdlerBase:
+class Base:
 
-    def download_file(self, url, mtime = None, size= None, compress = True):
+    def http_get(self, url, mtime = None, size= None, compress = True):
         # create request object
         request = urllib.request.Request(url)
         # add headers
@@ -34,21 +35,44 @@ class Py2chdlerBase:
             etag = remote_file.headers['etag']
             last_modified = remote_file.headers['last-modified']
             content_length = remote_file.headers['content-length']
-            data = remote_file.read()
+            content = remote_file.read()
             remote_file.close()
             # if compressed, decompress data
             if compress == True:
-                bin = io.BytesIO(data)
+                bin = io.BytesIO(content)
                 decompressed = gzip.GzipFile(fileobj=bin, mode="rb")
-                text = decompressed.read()
+                content = decompressed.read()
             else:
-                text = data
+                content = content
         # Set default value as None if download fails
         else:
-            code = code; etag = None; last_modified = None; content_length = None; text= None
-        # make dl_data dic
-        dl_data = {"code": code, "etag": etag, "last-modified": last_modified, "content-length": content_length, "text": text}
-        return dl_data
+            code = code; etag = None; last_modified = None; content_length = None; content= None
+        # make data dic
+        response = {"code": code, "etag": etag, "last-modified": last_modified, "content-length": content_length, "content": content}
+        return response
+
+    def download(self, url, filepath):
+        if os.path.exists(filepath):
+            local_mtime = self.convert_time_format(os.path.getmtime(filepath))
+        else:
+            local_mtime = None
+        response = self.http_get(url, local_mtime)
+        code = response['code']
+        if code == 200 or code == 206:
+            self.copy_file(filepath)
+            if code == 206:
+                add = True
+            else:
+                add = False
+            self.write_file(filepath, response['content'], add)
+            remote_mtime = self.convert_time_format(response['last-modified'])
+            self.set_mtime(filepath, remote_mtime)
+        elif code == 304:
+            pass
+        else:
+            raise Py2chdlerError( "HTTPError: " + code)
+        return code
+
 
     def write_file(self, filepath, data, add=False):
         if add:
@@ -70,24 +94,33 @@ class Py2chdlerBase:
         lines = data.splitlines()
         return lines
 
-    def rename_file(self, from_filepath):
+    def read_raw_file(self, filepath):
+        fs = io.open(filepath, mode='rb')
+        fcntl.flock(fs.fileno(), fcntl.LOCK_SH)
+        data = fs.read()
+        fcntl.flock(fs.fileno(), fcntl.LOCK_UN)
+        fs.close()
+        return data
+
+    def copy_file(self, from_filepath):
         to_filepath = from_filepath + ".old"
-        os.rename(from_filepath, to_filepath)
-
-
-    def get_mtime(self, filepath):
-        mtime = os.stat(filepath).st_mtime
-        return mtime
-
+        shutil.copy2(from_filepath, to_filepath)
 
     def set_mtime(self, filepath, mtime):
         atime = time.time()
         times = (atime, mtime)
         stat = os.utime(filepath, times)
     
-    def convert_time_format(self, time):
-        pass
-
+    def convert_time_format(self, inp_time , change_tz=True):
+        if isinstance(inp_time, str):
+            time_struct = time.strptime(inp_time, "%a, %d %b %Y %H:%M:%S %Z")
+            ret_time = int(time.mktime(time_struct) + 32400)
+        else:
+            time_struct = time.gmtime(inp_time - 32400)
+            ret_time = time.strftime("%a, %d %b %Y %H:%M:%S GMT", time_struct)
+        return ret_time
 
 if __name__ == '__main__':
-    pass
+    base = Base()
+    ret_time = base.convert_time_format("Jan, Thu 01 1970 09:00:00 GMT")
+    print(ret_time)

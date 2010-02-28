@@ -1,37 +1,36 @@
 import os
 import re
 
-from py2chdlerbase import Py2chdlerBase, Py2chdlerError
+from base import Base, Py2chdlerError
 from thread import Thread
 
-class Board(Py2chdlerBase):
-    def __init__(self, bbsmenu, board_name, board_name_alphabet, board_url):
+class Board(Base):
+    def __init__(self, bbsmenu, board_name, romaji_board_name, board_url):
         self.bbsmenu = bbsmenu
         self.name = board_name
-        self.name_alphabet = board_name_alphabet
-        self.url = board_url
-        self.subject_url = self.url + "subject.txt"
-        self.dir_path = self.bbsmenu.settings['base_dir'] + "/" + self.name_alphabet
-        self.subject_path = self.dir_path + "/subject.txt"
+        self.romaji_name = romaji_board_name
+        self.url = board_url + "subject.txt"
+        self.dir_path = self.bbsmenu.settings['base_dir'] + "/" + self.romaji_name
+        self.filepath = self.dir_path + "/subject.txt"
         if not os.path.exists(self.dir_path):
             os.mkdir(self.dir_path)
         elif not os.path.isdir(self.dir_path):
             raise Py2chdlerError(self.dir_path + " is not a directory.")
 
     def read(self):
-        if os.path.exists(self.subject_path):
-            lines = self.read_file(self.subject_path)
+        if os.path.exists(self.filepath):
+            lines = self.read_file(self.filepath)
         else:
             self.download()
-            lines = self.read_file(self.subject_path)
+            lines = self.read_file(self.filepath)
         return lines
 
     def download(self):
-        mtime = get_mtime(self.subject_path)
-        self.rename_file(self.subject_path)
-        dl_data = self.download_file(self.subject_url, mtime)
-        self.write_file(self.subject_path, dl_data['text'])
-        self.set_mtime(self.subject_path, dl_data['last-modified'])
+        mtime = get_mtime(self.filepath)
+        self.rename_file(self.filepath)
+        dl_data = self.download_file(self.url, mtime)
+        self.write_file(self.filepath, dl_data['text'])
+        self.set_mtime(self.filepath, dl_data['last-modified'])
 
     def get_threads(self, *thread_ids):
         threads = list()

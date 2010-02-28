@@ -1,61 +1,59 @@
 import os
 import re
 
-from py2chdlerbase import Py2chdlerBase, Py2chdlerError
+from base import Base, Py2chdlerError
 from board import Board #FIXME
 
-class Bbsmenu(Py2chdlerBase):
+class Bbsmenu(Base):
     def __init__(self, settings, bbsmenu_url):
         self.settings = settings
-        self.bbsmenu_path = self.settings['base_dir'] + "/bbsmenu"
+        self.filepath = self.settings['base_dir'] + "/bbsmenu"
         self.url = bbsmenu_url
+        self.download(self.url, self.filepath)
 
     def read(self):
-        if os.path.exists(self.bbsmenu_path):
-            lines = self.read_file(self.bbsmenu_path)
-        else:
-            self.download()
-            lines = self.read_file(self.bbsmenu_path)
-        return lines
-
-    def download(self):
-        mtime = self.get_mtime(self.bbsmenu_path)
-        self.rename_file(self.bbsmenu_path)
-        dl_data = self.download_file(self.url, mtime)
-        self.write_file(self.bbsmenu_path, dl_data['text'])
-        self.set_mtime(self.bbsmenu_path, dl_data['last-modified'])
-
-    def get_boards(self, *board_names_alphabet):
-        boards = list()
-        bbsmenu = self.read()
-        # convert tumple to list to use remove method
-        board_names_alphabet = list(board_names_alphabet)
-        # get requested board number
-        req = len(board_names_alphabet)
+        board_infos = list()
+        lines = self.read_file(self.filepath)
         url_regex = '<A HREF=(http://[-_a-zA-Z0-9./]+)(2ch.net|bbspink.com|machi.to)/([-_a-zA-Z0-9.]+)/>(.*)</A>'
         p_url = re.compile(url_regex)
-        for line in bbsmenu:
+        for line in lines:
             r_url = p_url.search(line)
             if r_url:
-                if req == 0 or r_url.group(3) in board_names_alphabet:
-                    board = Board(self, r_url.group(4), r_url.group(3), r_url.group(1) + r_url.group(2) + "/" + r_url.group(3) + "/")
-                    boards.append(board)
-                    if r_url.group(3) in board_names_alphabet:
-                        board_names_alphabet.remove(r_url.group(3))
+                board_info = {'name':r_url.group(4), 'romaji_name':r_url.group(3), 'url':r_url.group(1) + r_url.group(2) + "/" + r_url.group(3) + "/"}
+                board_infos.append(board_info)
+        return board_infos
+
+    def read_raw():
+        data = read_raw_file()
+        return data
+
+    def get_boards(self, *romaji_board_names):
+        boards = list()
+        board_infos = self.read()
+        # list to store obtained board names
+        obtained_romaji_board_names = list()
+        url_regex = '<A HREF=(http://[-_a-zA-Z0-9./]+)(2ch.net|bbspink.com|machi.to)/([-_a-zA-Z0-9.]+)/>(.*)</A>'
+        p_url = re.compile(url_regex)
+        for board_info in board_infos:
+            if len(romaji_board_names) == 0 or board_info['romaji_name'] in romaji_board_names:
+                board = Board(self, board_info['name'], board_info['romaji_name'], board_info['url'])
+                boards.append(board)
+                if board_info['romaji_name'] in romaji_board_names:
+                    obtained_romaji_board_names.append(board_info['romaji_name'])
         # raise err if requested board not exists
-        if not len(board_names_alphabet) == 0:
-            err_boards = ', '.join(board_names_alphabet)
-            raise Py2chdlerError("Board(s) name: " + err_boards + " are/is not exist(s). Or you may request same board more than once.")
+        if not len(romaji_board_names) == len(obtained_romaji_board_names):
+            err_romaji_board_names = romaji_board_names - set(obtained_romaji_board_names)
+            err_romaji_board_names = ', '.join(err_romaji_board_names)
+            raise Py2chdlerError("Board(s) name: " + err_romaji_board_names + " are/is not exist(s). Or you may request same board more than once.")
         return boards
 
-    def get_board(self, board_name_alphabet):
-        boards = self.get_boards(board_name_alphabet)
+    def get_board(self, romaji_board_name):
+        boards = self.get_boards(romaji_board_name)
         return boards[0]
 
 if __name__ == '__main__':
-    settings = {'base_dir': os.path.abspath('data')}
+    settings = {'base_dir': os.path.abspath('../data')}
     bbsmenu = Bbsmenu(settings, 'http://menu.2ch.net/bbsmenu.html')
-    bbsmenu.download()
     boards = bbsmenu.get_boards('news4vip')
     for board in boards:
-        print(board.name + board.name_alphabet + board.url)
+        print(board.name + board.romaji_name + board.url)
