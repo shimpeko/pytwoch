@@ -52,14 +52,13 @@ class Base:
         return response
 
     def download(self, url, filepath):
-        if os.path.exists(filepath):
-            local_mtime = self.convert_time_format(os.path.getmtime(filepath))
-        else:
-            local_mtime = None
+        file_existance = os.path.exists(filepath)
+        local_mtime = self.convert_time_format(os.path.getmtime(filepath)) if file_existance else None
         response = self.http_get(url, local_mtime)
         code = response['code']
         if code == 200 or code == 206:
-            self.copy_file(filepath)
+            if file_existance:
+                self.copy_file(filepath)
             if code == 206:
                 add = True
             else:
@@ -70,7 +69,7 @@ class Base:
         elif code == 304:
             pass
         else:
-            raise Py2chdlerError( "HTTPError: " + code)
+            raise Py2chdlerError("HTTPError. Response code is: " + str(code))
         return code
 
 
@@ -103,7 +102,7 @@ class Base:
         return data
 
     def copy_file(self, from_filepath):
-        to_filepath = from_filepath + ".old"
+        to_filepath = from_filepath + "_old"
         shutil.copy2(from_filepath, to_filepath)
 
     def set_mtime(self, filepath, mtime):

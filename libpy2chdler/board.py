@@ -11,26 +11,42 @@ class Board(Base):
         self.romaji_name = romaji_board_name
         self.url = board_url + "subject.txt"
         self.dir_path = self.bbsmenu.settings['base_dir'] + "/" + self.romaji_name
-        self.filepath = self.dir_path + "/subject.txt"
+        self.filepath = self.dir_path + "/subject"
+        self.filepath_old = self.dir_path + "/subject_old"
         if not os.path.exists(self.dir_path):
             os.mkdir(self.dir_path)
         elif not os.path.isdir(self.dir_path):
             raise Py2chdlerError(self.dir_path + " is not a directory.")
 
     def read(self):
-        if os.path.exists(self.filepath):
-            lines = self.read_file(self.filepath)
+        thread_infos = list()
+        response_code = self.download(self.url, self.filepath)
+        print(response_code)
+        subject = set(self.read_file(self.filepath))
+        if os.path.exists(self.filepath_old):
+            subject_old = set(self.read_file(self.filepath_old))
         else:
-            self.download()
-            lines = self.read_file(self.filepath)
-        return lines
-
-    def download(self):
-        mtime = get_mtime(self.filepath)
-        self.rename_file(self.filepath)
-        dl_data = self.download_file(self.url, mtime)
-        self.write_file(self.filepath, dl_data['text'])
-        self.set_mtime(self.filepath, dl_data['last-modified'])
+            subject_old = set()
+        thread_regex = '^([0-9]*)\.dat<>(.*)\(([0-9]*)\)$'
+        p_thread = re.compile(thread_regex)
+        new_lines = subject - subject_old
+        old_lines = subject_old - subject
+        for line in new_lines:
+            r_thread = p_thread.search(line)
+            if r_thread:
+                thread_id = int(r_thread.group(1))
+                res_count = int(r_thread.group(3))
+                old_res_count = 0
+                for old_line in old_lines:
+                    old_r_thread = p_thread.search(old_line)
+                    if old_r_thread:
+                        if thread_id == int(old_r_thread.group(1)):
+                            old_res_count = int(old_r_thread.group(3))
+                            break
+                new_res_count = res_count - old_res_count
+                thread_info = {'id':thread_id, 'title':r_thread.group(2), 'res_count':res_count, 'new_res_count':new_res_count}
+                thread_infos.append(thread_info)
+        return thread_infos
 
     def get_threads(self, *thread_ids):
         threads = list()
@@ -61,10 +77,9 @@ class Board(Base):
 
 if __name__ == '__main__':
     from bbsmenu import Bbsmenu
-    settings = {'base_dir': os.path.abspath('data')}
+    settings = {'base_dir': os.path.abspath('../data')}
     bbsmenu = Bbsmenu(settings, 'http://menu.2ch.net/bbsmenu.html')
     boards = bbsmenu.get_boards('news4vip')
     for board in boards:
-        threads = board.get_threads()
-        for thread in threads:
-            print(thread.title + " " + thread.res_count)
+        for b in board.read():
+            print(b)

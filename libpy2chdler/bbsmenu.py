@@ -9,23 +9,24 @@ class Bbsmenu(Base):
         self.settings = settings
         self.filepath = self.settings['base_dir'] + "/bbsmenu"
         self.url = bbsmenu_url
-        self.download(self.url, self.filepath)
 
     def read(self):
         board_infos = list()
-        lines = self.read_file(self.filepath)
+        response_code = self.download(self.url, self.filepath)
+        bbsmenu = self.read_file(self.filepath)
         url_regex = '<A HREF=(http://[-_a-zA-Z0-9./]+)(2ch.net|bbspink.com|machi.to)/([-_a-zA-Z0-9.]+)/>(.*)</A>'
         p_url = re.compile(url_regex)
-        for line in lines:
+        for line in bbsmenu:
             r_url = p_url.search(line)
             if r_url:
                 board_info = {'name':r_url.group(4), 'romaji_name':r_url.group(3), 'url':r_url.group(1) + r_url.group(2) + "/" + r_url.group(3) + "/"}
                 board_infos.append(board_info)
         return board_infos
 
-    def read_raw():
-        data = read_raw_file()
-        return data
+    def read_raw(self):
+        response_code = self.download(self.url, self.filepath)
+        raw_bbsmenu = self.read_raw_file()
+        return raw_bbsmenu
 
     def get_boards(self, *romaji_board_names):
         boards = list()
@@ -54,6 +55,6 @@ class Bbsmenu(Base):
 if __name__ == '__main__':
     settings = {'base_dir': os.path.abspath('../data')}
     bbsmenu = Bbsmenu(settings, 'http://menu.2ch.net/bbsmenu.html')
-    boards = bbsmenu.get_boards('news4vip')
+    boards = bbsmenu.get_boards('news4vip', 'megami', 'neet4vip')
     for board in boards:
         print(board.name + board.romaji_name + board.url)
