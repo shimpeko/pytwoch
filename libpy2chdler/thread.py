@@ -38,8 +38,7 @@ class Thread(Base):
 
 if __name__ == '__main__':
     from bbsmenu import Bbsmenu
-    from board import Board
-    settings = {'base_dir': os.path.abspath('data')}
+    settings = {'base_dir': os.path.abspath('../data')}
     bbsmenu = Bbsmenu(settings, 'http://menu.2ch.net/bbsmenu.html')
     boards = bbsmenu.get_boards('megami')
     for board in boards:
