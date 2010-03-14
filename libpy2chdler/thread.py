@@ -22,7 +22,7 @@ class Thread(Base):
             dat_old = set(self.read_file(self.filepath_old))
         else:
             dat_old = set()
-        dat_regex = '^(.*)<>(.*)<>(\d{4}/\d{2}/\d{2}\(.\)\s\d{2}:\d{2}:\d{2}\.{0,1}\d{0,2}) ([a-zA-Z0-9+/?:]{0,12})<>(.*)<>.*$'
+        dat_regex = '^(.*)<>(.*)<>(\d{4}/\d{2}/\d{2}\(.\)\s\d{2}:\d{2}:\d{2}(?:\.\d{2}){0,2}) ([a-zA-Z0-9+/?:]{0,12})<>(.*)<>.*$'
         p_dat = re.compile(dat_regex)
         # make new_dat set
         new_dat = dat - dat_old
