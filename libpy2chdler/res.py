@@ -8,7 +8,7 @@ class Res():
         self.id = id
         self.username = username
         self.posted_raw = posted
-        p_posted = re.compile('^(\d{4}/\d{2}/\d{2})(\(.\))\s(\d{2}:\d{2}:\d{2})$')
+        p_posted = re.compile('^(\d{4}/\d{2}/\d{2})(\(.\))\s(\d{2}:\d{2}:\d{2})(\.\d{2}){0,1}$')
         r_posted = r_posted.match(self.posted_raw)
         time_struct = time.strptime(r_posted.group(1) + r_posted.group(2) + "JST", "%Y/%m/%d%H:%M:%S%Z")
         self.posted_epoc = time.mktime(time_struct)

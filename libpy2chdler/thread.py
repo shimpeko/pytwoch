@@ -22,7 +22,7 @@ class Thread(Base):
             dat_old = set(self.read_file(self.filepath_old))
         else:
             dat_old = set()
-        dat_regex = '^(.*)<>(.*)<>(.*\s.*)\s(.*)<>(.*)<>(.*)$'
+        dat_regex = '^(.*)<>(.*)<>(\d{4}/\d{2}/\d{2}\(.\)\s\d{2}:\d{2}:\d{2}(\.\d{2}){0,1}) ([a-zA-Z0-9+/?:]{0,12})<>(.*)<>.*$'
         p_dat = re.compile(dat_regex)
         # make new_dat set
         new_dat = dat - dat_old
@@ -40,8 +40,8 @@ class Thread(Base):
                 res_info['username'] = r_dat.group(1)
                 res_info['email'] = r_dat.group(2)
                 res_info['posted'] = r_dat.group(3)
-                res_info['user_id'] = r_dat.group(4)
-                res_info['content'] = r_dat.group(5)
+                res_info['user_id'] = r_dat.group(5)
+                res_info['content'] = r_dat.group(6)
                 res_info['new'] = 1 if res_num >= (res_count - new_res_count) else 0
                 res_infos.append(res_info)
                 res_num += 1
@@ -63,8 +63,8 @@ if __name__ == '__main__':
     from board import Board
     settings = {'base_dir': os.path.abspath('../data')}
     bbsmenu = Bbsmenu(settings, 'http://menu.2ch.net/bbsmenu.html')
-    boards = bbsmenu.get_boards('news4vip')
+    boards = bbsmenu.get_boards('megami')
     for board in boards:
-        threads = board.get_new_threads()
+        threads = board.get_threads()
         for thread in threads:
             thread.read()
