@@ -1,34 +1,56 @@
-import urllib.parse
 import os
+import time
+import re
+import urllib.parse
 from base import Base, Py2chdlerError
 
 
 class Thread(Base):
-    def __init__(self, board, thread_id, title, res_count):
+    def __init__(self, board, thread_id, title):
         self.board = board
         self.id = thread_id
         self.title = title
+        self.url = urllib.parse.urljoin(self.board.url, 'dat') + "/" + str(self.id) + ".dat"
         self.filepath = self.board.dir_path + "/" + str(self.id) + ".dat"
-        self.res_count = res_count
-        self.new_res_count = None
-        self.reses = None
-        self.url = self.board.url + "dat/" + str(self.id) + ".dat"
+        self.filepath_old = self.filepath + "_old"
 
     def read(self):
-        if os.path.exists(self.filepath):
-            lines = self.read_file(self.filepath)
+        res_infos = list()
+        self.download(self.url, self.filepath, True)
+        dat = set(self.read_file(self.filepath))
+        if os.path.exists(self.filepath_old):
+            dat_old = set(self.read_file(self.filepath_old))
         else:
-            self.download()
-            lines = self.read_file(self.filepath)
-        return lines
+            dat_old = set()
+        dat_regex = '^(.*)<>(.*)<>(.*\s.*)\s(.*)<>(.*)<>(.*)$'
+        p_dat = re.compile(dat_regex)
+        # make new_dat set
+        new_dat = dat - dat_old
+        # calc res counts
+        res_count = len(dat)
+        new_res_count = len(new_dat)
+        # process each line
+        res_num = 1
+        for line in dat:
+            r_dat = p_dat.match(line)
+            if r_dat:
+                print(line)
+                res_info = dict()
+                res_info['id'] = res_num
+                res_info['username'] = r_dat.group(1)
+                res_info['email'] = r_dat.group(2)
+                res_info['posted'] = r_dat.group(3)
+                res_info['user_id'] = r_dat.group(4)
+                res_info['content'] = r_dat.group(5)
+                res_info['new'] = 1 if res_num >= (res_count - new_res_count) else 0
+                res_infos.append(res_info)
+                res_num += 1
+        return res_infos
 
-    def download(self):
-        mtime = self.get_mtime(self.filepath)
-        self.rename_file(self.filepath)
-        dl_data = self.download_file(self.url, mtime)
-        self.write_file(self.filepath, dl_data['text'])
-        self.set_mtime(self.filepath, dl_data['last-modified'])
-
+    def read_raw(self):
+        self.download(self.url, self.filepath)
+        raw_dat = self.read_raw_file(self.filepath)
+        return raw_dat
 
     def get_reses(self, *res_ids):
         pass
@@ -38,12 +60,11 @@ class Thread(Base):
 
 if __name__ == '__main__':
     from bbsmenu import Bbsmenu
+    from board import Board
     settings = {'base_dir': os.path.abspath('../data')}
     bbsmenu = Bbsmenu(settings, 'http://menu.2ch.net/bbsmenu.html')
-    boards = bbsmenu.get_boards('megami')
+    boards = bbsmenu.get_boards('news4vip')
     for board in boards:
-        threads = board.get_threads()
+        threads = board.get_new_threads()
         for thread in threads:
-            thread.download()
-            print(thread.url)
-
+            thread.read()
