@@ -1,5 +1,5 @@
 import os, os.path
-from bbsmenu import Bbsmenu
+from libpy2chdler import bbsmenu
 
 class Py2chdler:
     def __init__(self, base_dir, bbsmenu_url):

@@ -1,8 +1,9 @@
 import os
 import re
 
-from base import Base, Py2chdlerError
-from board import Board #FIXME
+
+from .base import Base, Py2chdlerError
+from .board import Board
 
 class Bbsmenu(Base):
     def __init__(self, settings, bbsmenu_url):
@@ -67,7 +68,8 @@ class Bbsmenu(Base):
 
 if __name__ == '__main__':
     import time
-    settings = {'base_dir': os.path.abspath('../data')}
+    homedir = os.path.expanduser('~')
+    settings = {'base_dir': os.path.abspath(homedir + '/py2chdler/data')}
     bbsmenu = Bbsmenu(settings, 'http://menu.2ch.net/bbsmenu.html')
     board_infos = bbsmenu.read()
     for board_info in board_infos:

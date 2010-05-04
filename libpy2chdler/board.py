@@ -1,8 +1,8 @@
 import os
 import re
 
-from base import Base, Py2chdlerError
-from thread import Thread
+from .base import Base, Py2chdlerError
+from .thread import Thread
 
 class Board(Base):
     def __init__(self, bbsmenu, board_name, romaji_board_name, board_url):
@@ -55,7 +55,7 @@ class Board(Base):
         raw_subject = self.read_raw_file(self.filepath)
         return raw_subject
 
-    def get_threads(self, *thread_ids, new=False):
+    def get_threads(self, *thread_ids, new=True):
         threads = list()
         # list to store exist thread_ids (for error check)
         exist_thread_ids = list()
@@ -107,11 +107,12 @@ class Board(Base):
 
 if __name__ == '__main__':
     import time
-    from bbsmenu import Bbsmenu
-    settings = {'base_dir': os.path.abspath('../data')}
+    from .bbsmenu import Bbsmenu
+    homedir = os.path.expanduser('~')
+    settings = {'base_dir': os.path.abspath(homedir + '/py2chdler/data')}
     bbsmenu = Bbsmenu(settings, 'http://menu.2ch.net/bbsmenu.html')
     boards = bbsmenu.get_boards('news4vip')
     for board in boards:
-        threads = board.get_new_threads()
+        threads = board.get_threads()
         for thread in threads:
             print(thread.title)

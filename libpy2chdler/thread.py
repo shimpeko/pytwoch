@@ -2,7 +2,8 @@ import os
 import time
 import re
 import urllib.parse
-from base import Base, Py2chdlerError
+
+from .base import Base, Py2chdlerError
 
 
 class Thread(Base):
@@ -34,7 +35,6 @@ class Thread(Base):
         for line in dat:
             r_dat = p_dat.match(line)
             if r_dat:
-                print(line)
                 res_info = dict()
                 res_info['id'] = res_num
                 res_info['username'] = r_dat.group(1)
@@ -65,6 +65,6 @@ if __name__ == '__main__':
     bbsmenu = Bbsmenu(settings, 'http://menu.2ch.net/bbsmenu.html')
     boards = bbsmenu.get_boards('megami')
     for board in boards:
-        threads = board.get_threads()
+        threads = board.get_new_threads()
         for thread in threads:
             thread.read()
