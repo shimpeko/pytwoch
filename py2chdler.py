@@ -5,7 +5,7 @@ class Py2chdler:
     def __init__(self, base_dir, bbsmenu_url):
         self.settings = {'base_dir': base_dir}
         self.bbsmenu = Bbsmenu(self.settings, bbsmenu_url)
-        # check existance and access rights of base_dir
+        # check rights to base_dir
         if os.path.isdir(base_dir) == False or os.access(base_dir, os.W_OK) == False:
             raise Py2chdlerError(base_dir + " not exists or not writable")
 
