@@ -1,0 +1,2 @@
+class PytwochError(Exception):
+    pass

@@ -11,9 +11,84 @@ import re
 class PytwochError(Exception):
     pass
 
-class Base:
+class Resouce:
+
+    def __init__(self, url):
+
+
+
     
-    def download(self, url, file_path):
+    def get_resouce(self, url, file_path):
+
+        if re.match('^.*\.dat$', url):
+            is_dat_url = True
+        else:
+            is_dat_url = False
+        is_cache_exists = os.path.exists(file_path)
+
+        cache_mtime = self.get_mtime(file_path)
+        if is_cache_exists and is_dat_url:
+            cache_size = os.path.getsize(file_path) - 1
+        else:
+            cache_size = None
+
+        response = self.http_get(url)
+
+        # check abone and retry if abone
+        if is_dat_url and is_cache_exists:
+            if not response['content'][0].decode('sjis', 'replace') == "\n":
+                response = self.http_get(url, cache_mtime)
+
+        # save cache
+        if response['code'] == 200 or response['code'] == 206:
+            if response['code'] == 206:
+                shutil.copy2(file_path, file_path + "_old")
+            self.__save_cache(response)
+        elif response['code'] == 304:
+        else:
+            raise Py2chdlerError("HTTPERROR:" + code + ": Can't access " + url
+                                 + ".")
+
+        # make return value 
+        if response['code'] == 200 or response['code'] == 206 or\
+           response['code'] == 304:
+            ret_val = { "code"   : response['code'],
+                        "content": response['content'][1-] }
+        else:
+            ret_val = { "code"   : response['code'],
+                        "content": None }
+        return ret_val
+
+
+    def __get_type(url):
+
+    def __get_cache_file_path():
+        pass
+
+    def is_updated():
+        pass
+    
+    def reload():
+        pass
+
+    def get_content():
+        pass
+
+    def _set_url(self, url):
+        if self.__is_url_valid():
+            self.url = url
+        else:
+            self.url = self.__correct_url()
+        return url
+
+    def __is_url_valid():
+        return ret_val
+
+    def __correct_url():
+        return url
+
+    def __download():
+
         if re.match('^.*\.dat$', url):
             is_dat_url = True
         else:
