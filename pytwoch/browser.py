@@ -1,75 +1,89 @@
 import os, os.path
 import re
 import urllib.parse
-import libpytwoch
 
-class Pytwoch:
+class Browser:
 
-    def __init__(self, cache_dir_path=None, cache_size=1000000):
-        # Check parameters.
-        # Check right to the cache_dir_path
+    def __init__(self, cache_dir_path):
+        # compile regex patters
+        self.p_host = re.compile('^(\w+\.2ch\.net|venus\.bbspink\.net)$')
+        self.p_menu = re.compile('^menu\.2ch\.net$')
+        self.p_board = re.compile('^/(\w+)(?:/subject\.txt)$')
+        self.p_thread_dat = re.compile('^/(\w+)/dat/(\d+).dat(?:#\d{1,4}(?:-\d{1,4}))$')
+        self.p_thread_cgi = re.compile('^/test/read\.cgi/(\w+)/(\d+)/'
+                                '(?:\#\d{1,4}(?:-\d{1,4}))$')
+        # check chache dir exsitance and privileges
         if os.path.isdir(cache_dir_path) == False or \
-           os.access(cache_dir_path, os.W_OK) == False:
-            raise PytwoException(cache_dir_path + 'is not exist or not writable.')
-        # Check if cache_size is numeric.
-        if not isinstance(cache_size,int):
-            raise PytwoException('cache_size parameter must be numeric.')
-        # save config
-        self.config = { 'cache_dir_path'    : cache_dir_path,
-                        'cache_size'        : cache_size }
-        self.twochao = TwoChAO(self.config)
+            os.access(cache_dir_path, os.W_OK) == False:
+                raise Exception(cache_dir_path + 'is not exist or not writable.')
+        self.cache_dir = cache_dir
+        self.twochao = None
 
-    # construct 2ch objects
-    def get(self, url): 
-        return resource_type
+    # create instance
+    def get_menu(self, url):
+        return Menu(self.get_info(url))
 
-    def get_resource_info(self, url):
-        url_obj = urllib.parse.urlparse(url)
-        r_host = re.match('^(\w+\.2ch\.net|venus\.bbspink\.net)$', url_obj.netloc)
-        r_menu = re.match('^menu\.2ch\.net$', url_obj.netloc)
-        r_board = re.match('^/(\w+)/{0,1}(?:subject\.txt){0,1}$', url_obj.path)
-        r_thread_dat = re.match('^/(\w+)/dat/(\d+).dat$', url_obj.path)
-        r_thread_cgi = re.match('^/test/read\.cgi/(\w+)/(\d+)/'
-                                '(\d+(?:-\d+){0,1}|l\d{0,4})$', url_obj.path)
-        if r_host and (r_thread_dat or r_thread_cgi):
-            resource_type = 'thread'
-            resource_url = r_host.group(1) + '/'
+    def get_board(self, url): 
+        return Board(self.get_info(url))
+
+    def get_thread(self, url):
+        return Thread(self.get_info(url))
+
+    def get_type(self, url):
+        return self.get_info(url)['type']
+
+    # extract board id, thread id, comment number from url
+    def get_info(self, url):
+        uo = urllib.parse.urlparse(url)
+        # regex pattern matching for URL 
+        r_host = self.p_host.match(uo.netloc) 
+        r_thread_dat = self.p_thread_dat.match(uo.path)
+        r_thread_cgi = self.p_thread_cgi.match(uo.path)
+        r_board = self.p_board.match(uo.path)
+        r_menu = self.p_menu.match(uo.netloc)
+        host_id = None
+        thread_id = None
+        board_id = None
+        comment_num = None
+        # extract Ids for each resouce type
+        if r_thread_dat or r_thread_cgi:
+            resouce_type = 'thread'
             if r_thread_dat:
                 board_id = r_thread_dat.group(1)
                 thread_id = r_thread_dat.group(2)
-                resource_url = resource_url + r_thread_dat.group(1) +\
-                               '/dat/' + r_thread_dat.group(2) + '.dat'
+                comment_num = r_thread_dat.group(3)
+                resource_path = r_thread_dat.group(1) + '/dat/' +\
+                               r_thread_dat.group(2) + '.dat'
             elif r_thread_cgi:
                 board_id = r_thread_cgi.group(1)
                 thread_id = r_thread_cgi.group(2)
-                resource_url = resource_url + r_thread_cgi.group(1) +\
-                               '/dat/' + r_thread_cgi.group(2) + '.dat' +\
-                               '#' + r_thread_cgi.group(3)
-        elif r_host and r_board:
+                comment_num = r_thread_cgi.group(3)
+                resource_path = r_thread_cgi.group(1) + '/dat/' +\
+                               r_thread_cgi.group(2) + '.dat'
+        elif r_board:
             resource_type = 'board'
             board_id = r_board.group(1)
-            thread_id = None
-            resource_url = r_host.group(1) + '/' +  r_board.group(1) +\
-                           '/subject.txt'
-        elif r_menu: 
+            resource_path = r_board.group(1) + '/subject.txt'
+        elif r_menu:
             resource_type = 'menu'
-            board_id =  None
-            thread_id = None
-            resource_url = 'menu.2ch.net/bbsmenu.html'
+            resource_path = 'bbsmenu.html'
         else:
-            resource_type = None 
-        if resource_type:
-            resource_info = { 'type'    : resource_type,
-                              'url'     : 'http://' + resource_url,
-                              'id'      : { 'host_id'   : r_host.group(1),
-                                            'board_id'  : board_id,
-                                            'thread_id' : thread_id}}
+            resource_type = None
+        # make full URL
+        if r_host:
+            host_id = r_host.group(1)
+            resource_url = "http://" + r_host.group(1) + "/" + resource_path
         else:
-            resource_info = None
-        return resource_info
+            resource_url = None
+        return resource_info = { 'type'          : resource_type,
+                                 'url'           : resource_url,
+                                 'host_id'       : host_id
+                                 'board_id'      : board_id,
+                                 'thread_id'     : thread_id
+                                 'comment_num'   : comment_num }
 
 if __name__ == '__main__':
-    pytwoch = Pytwoch('./')
-    resource_info = pytwoch.get_resource_info('http://toki.2ch.net/moeplus/')
-    print(resource_info)
+    b  = Browser()
+    t = b.get_type('http://toki.2ch.net/moeplus/')
+    print(t)
 
