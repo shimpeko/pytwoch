@@ -6,7 +6,7 @@ import urllib.parse
 from .base import Base, Py2chdlerError
 
 
-class Thread(Base):
+class Thread(Resource):
     def __init__(self, board, thread_id, title):
         self.board = board
         self.id = thread_id

@@ -11,24 +11,60 @@ import re
 class TwoChAO: 
 
     def __init__(self, config):
+        
         self.config = config
     
     def get(self, resource_info):
+        """ Access 2ch data
+        """
+        response = self.__http_get(resource_info['url'])
+        return response
 
-        response = self.http_get(url)
+    def __http_get(self, url, mtime=None, byte_from=None):
+        """ http get
+        """
+        request = urllib.request.Request(url)
 
-        # make return value 
-        if response['code'] == 200 or response['code'] == 206 or\
-           response['code'] == 304:
-            ret_val = { "code"   : response['code'],
-                        "content": response['content'][1-] }
+        # add header
+        if mtime:
+            request.add_header('If-Modified-Since', mtime)
+        if byte_from:
+            request.add_header('Range', "bytes=" + str(byte_from) + "-")
         else:
-            ret_val = { "code"   : response['code'],
-                        "content": None }
-        return ret_val
-
-    def __get__
-
+            request.add_header('Accept-Encoding', 'deflate, gzip')
+        request.add_header('User-Agent',
+                           'Mozilla/5.0 (Windows; U; Windows NT 5.1; '
+                           'en-US; rv:1.9.2) Gecko/20100115 Firefox/3.6 '
+                           '(.NET CLR 3.5.30729)')
+        # open request
+        opener = urllib.request.build_opener()
+        try:
+            response = opener.open(request)
+            response_coode = response.code
+        except urllib.error.HTTPError as e:
+            status_code = e.code
+        # process data if success
+        if status_code == 200 or status_code == 206:
+            content = response.read()
+            response.close()
+            # if compressed, decompress data
+            if byte_from == None:
+                if re.search('.*(gzip|deflate).*',
+                             response.headers['content-encoding'])
+                    b = io.BytesIO(content)
+                    decompressed = gzip.GzipFile(fileobj=b, mode="rb")
+                    content = decompressed.read()
+            response = { "status"           : status_code,
+                         "last-modified"    : response.headers['last-modified'],
+                         "content-length"   : response.headers['content-length'],
+                         "content"          : content[1-] }
+        else:
+            response.close()
+            response = { "status"           : status_code,
+                         "last-modified"    : None,
+                         "content-length"   : None,
+                         "content"          : None }
+        return response
 
     def __check_abone(self):
         # check abone and retry if abone
@@ -68,57 +104,6 @@ class TwoChAO:
             self.write_file(file_path, response['content'], True)
         self.set_mtime(filepath, 
                        self.convert_time_format(response['last-modified']))
-
-
-    def __http_get(self, url, mtime, byte_from):
-        request = urllib.request.Request(url)
-
-        # add header
-        if mtime:
-            request.add_header('If-Modified-Since', mtime)
-        if byte_from:
-            request.add_header('Range', "bytes=" + str(byte_from) + "-")
-        else:
-            is_compressed = True
-            request.add_header('Accept-Encoding', 'deflate, gzip')
-        request.add_header('User-Agent',
-                           'Mozilla/5.0 (Windows; U; Windows NT 5.1; '
-                           'en-US; rv:1.9.2) Gecko/20100115 Firefox/3.6 '
-                           '(.NET CLR 3.5.30729)')
-
-        # open request
-        opener = urllib.request.build_opener()
-        try:
-            response = opener.open(request)
-            response_coode = response.code
-        except urllib.error.HTTPError as e:
-            response_code = e.code
-
-        # if success process data
-        if response_code == 200 or response_code == 206:
-            content = response.read()
-            response.close()
-            # if compressed, decompress data
-            if is_compressed == True and byte_from == None:
-                if re.search('.*(gzip|deflate).*',
-                             response.headers['content-encoding'])
-                    bin = io.BytesIO(content)
-                    decompressed = gzip.GzipFile(fileobj=bin, mode="rb")
-                    content = decompressed.read()
-            response = { "code"             : response_code,
-                         "etag"             : response.headers['etag'],
-                         "last-modified"    : response.headers['last-modified'],
-                         "content-length"   : response.headers['content-length'],
-                         "content"          : content }
-        else:
-            response.close()
-            response = { "code"             : response_code,
-                         "etag"             : None,
-                         "last-modified"    : None,
-                         "content-length"   : None,
-                         "content"          : None }
-        return response
-
 
     def write_file(self, filepath, data, add=False):
         if add:

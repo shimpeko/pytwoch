@@ -1,16 +1,9 @@
 import os
 import re
 
-
-from .base import Base, Py2chdlerError
-from .board import Board
-
-class Bbsmenu(Base):
-    def __init__(self, settings, bbsmenu_url):
-        self.settings = settings
-        self.filepath = self.settings['base_dir'] + "/bbsmenu"
-        self.filepath_old = self.filepath + "_old"
-        self.url = bbsmenu_url
+class Menu(Resouce):
+    def __init__(self, resource_info):
+        self.d = data
 
     def read(self):
         board_infos = list()
@@ -71,17 +64,3 @@ if __name__ == '__main__':
     homedir = os.path.expanduser('~')
     settings = {'base_dir': os.path.abspath(homedir + '/py2chdler/data')}
     bbsmenu = Bbsmenu(settings, 'http://menu.2ch.net/bbsmenu.html')
-    board_infos = bbsmenu.read()
-    for board_info in board_infos:
-        print(board_info)
-    time.sleep(3)
-    boards = bbsmenu.get_boards('news4vip', 'pc')
-    for board in boards:
-        print(board.name + "|" + board.romaji_name + "|" + board.url + "|" + board.filepath + "|" + board.filepath_old + "|" + board.dir_path)
-    time.sleep(3)
-    boards = bbsmenu.get_boards()
-    for board in boards:
-        print(board.name + "|" + board.romaji_name + "|" + board.url + "|" + board.filepath + "|" + board.filepath_old + "|" + board.dir_path)
-    time.sleep(3)
-    board = bbsmenu.get_board('news4vip')
-    print(board.name + "|" + board.romaji_name + "|" + board.url + "|" + board.filepath + "|" + board.filepath_old + "|" + board.dir_path)
