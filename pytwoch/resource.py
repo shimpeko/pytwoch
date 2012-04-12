@@ -44,6 +44,12 @@ class Resouce(metaclass=abc.ABCMeta):
     def get_url(self):
         return self.__url:
 
+    def __validate_url(self, url):
+        if re.match(url, self.__url_pattern):
+            return True
+        else:
+            return False
+
 if __name__ == '__main__':
     base = Base()
     ret_time = base.convert_time_format("Jan, Thu 01 1970 09:00:00 GMT")

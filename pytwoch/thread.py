@@ -7,15 +7,18 @@ from .base import Base, Py2chdlerError
 
 
 class Thread(Resource):
-    def __init__(self, board, thread_id, title):
-        self.board = board
-        self.id = thread_id
-        self.title = title
-        self.url = urllib.parse.urljoin(self.board.url, 'dat') + "/" + str(self.id) + ".dat"
-        self.filepath = self.board.dir_path + "/" + str(self.id) + ".dat"
-        self.filepath_old = self.filepath + "_old"
+    def __init__(self, url, cache_dir_path):
+        self.url = url
+        self.__cache_dir_path = cache_dir_path
+        self.__url_pattern = '^/(\w+)(?:/subject\.txt)$'
+        self.comment_num = None
+        self.isUrlValid = self.__validate_url(url)
+        self.isConnected = False
 
-    def read(self):
+    def connect(self):
+        pass
+
+    def next(self):
         res_infos = list()
         self.download(self.url, self.filepath, True)
         dat = set(self.read_file(self.filepath))
@@ -57,6 +60,7 @@ class Thread(Resource):
     
     def get_res(self, res_id):
         pass
+    
 
 if __name__ == '__main__':
     from bbsmenu import Bbsmenu
